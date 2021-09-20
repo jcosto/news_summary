@@ -2,6 +2,15 @@
 todo:
 tf-idf and semantic similarity on summary sentences to prevent repeating article header
 word formatting from python (python-docx)
+
+news handlers for
+https://www.bworldonline.com/category/banking-finance/
+https://www.bworldonline.com/category/economy/
+https://edition.cnn.com/business
+
+https://www.manilatimes.net/business
+https://business.inquirer.net/
+https://www.gmanetwork.com/news/money/
 """
 from pprint import pprint
 from typing import Callable
