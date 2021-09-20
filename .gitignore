@@ -1,0 +1,5 @@
+**/out/
+test*
+**/Driver_Notes/
+**/__pycache__/
+*.pyc
