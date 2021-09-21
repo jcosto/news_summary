@@ -1,5 +1,5 @@
-from main import NewsGroup, NewsItem, has_class_name, get_page_source, get_filesafe_url
-from main import html_dir, json_dir
+from news import NewsGroup, NewsItem, has_class_name, get_page_source, get_filesafe_url
+from news import html_dir, json_dir
 import bs4
 import os
 import datetime
@@ -45,7 +45,25 @@ class NewsItem_Reuters(NewsItem):
                         a.findAll("span")[0].text
                     )
                     yield n
+    @classmethod
+    def cleanup_content(cls, content: list):
+        c_list = list()
+        for i, c in enumerate(content):
+            c_list.append(cls.cleanup_content_item(c, i))
+        return c_list
     
+    @classmethod
+    def cleanup_content_item(cls, c: str, i: int):
+        c_ = c
+        if i == 0:
+            try:
+                c_ = c_.split("(Reuters) - ")[1]
+            except IndexError:
+                pass
+        if c_.endswith("read more "):
+            c_ = c_[:len("read more ")]
+        return c_
+
     def extract_header(self, soup: bs4.BeautifulSoup):
         for d in soup.findAll("h1"):
             # print(d)

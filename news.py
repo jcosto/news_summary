@@ -1,19 +1,28 @@
 """
 todo:
-tf-idf and semantic similarity on summary sentences to prevent repeating article header
 word formatting from python (python-docx)
+tf-idf and semantic similarity on summary sentences to prevent repeating article header
+ph vs ROW news: how to get geographic source of data from article?
+tf-idf/semantic similarity to rank news based on duplication among news sources
 
-news handlers for
+finished handlers
+https://www.reuters.com/business/finance/
+https://www.cnbc.com/finance/
+
+todo handlers
+https://www.bworldonline.com/category/top-stories/
 https://www.bworldonline.com/category/banking-finance/
 https://www.bworldonline.com/category/economy/
 https://edition.cnn.com/business
 
-https://www.manilatimes.net/business
 https://business.inquirer.net/
 https://www.gmanetwork.com/news/money/
+
+maybe todo
+https://www.manilatimes.net/business
 """
 from pprint import pprint
-from typing import Callable
+from typing import Callable, List
 from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 import time
@@ -44,7 +53,7 @@ def get_page_source(url, dst, sleep_s=0, hold_proc=True):
 def get_filesafe_url(url):
     return url.replace(":","_").replace("/","_").replace(".","_")
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import datetime
 import bs4
 import json
@@ -93,6 +102,7 @@ class NewsItem():
     summary: str = None
     full_date: str = None
     dt: datetime.datetime = None
+    content: List = field(default_factory=lambda : list())
     @classmethod
     def yield_news_reuters(cls, soup: bs4.BeautifulSoup, base_url: str):
         pass

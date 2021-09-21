@@ -1,5 +1,5 @@
-from main import NewsGroup, NewsItem, has_class_name, get_page_source, get_filesafe_url
-from main import html_dir, json_dir
+from news import NewsGroup, NewsItem, has_class_name, get_page_source, get_filesafe_url
+from news import html_dir, json_dir
 import bs4
 import os
 import datetime
