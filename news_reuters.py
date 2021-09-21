@@ -5,6 +5,9 @@ import os
 import datetime
 
 class NewsItem_Reuters(NewsItem):
+    URLS = [
+        "https://www.reuters.com/business/finance/"
+    ]
     @classmethod
     def yield_news(cls, soup: bs4.BeautifulSoup, base_url: str):
         story_collections = soup.findAll("div")
@@ -117,8 +120,7 @@ class NewsItem_Reuters(NewsItem):
         n.date = datetime.datetime.strptime(','.join(n.full_date.split(",")[:2]), r"%B %d, %Y").isoformat()
         n.summary = n.summary.split("(Reuters) - ")[1]
 
-if __name__ == "__main__":
-    front_url = "https://www.reuters.com/business/finance/"
+def process(front_url):
     front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
     front_html = os.path.join(html_dir, front_filesafe + ".html")
     front_json = os.path.join(json_dir, front_filesafe + ".json")
@@ -129,3 +131,8 @@ if __name__ == "__main__":
         n.extract_news_content(html_dir, hold_proc=False)
         n.cleanup_data()
     ng.save_json()
+    return front_html, front_json
+
+if __name__ == "__main__":
+    for front_url in NewsItem_Reuters.URLS:
+        html_path, json_path = process(front_url)

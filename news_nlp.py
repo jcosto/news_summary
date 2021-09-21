@@ -43,10 +43,13 @@ def process_ng(
 
         print(ni_nlp.ni.header)
         content = content_preprocess_fun(ni_nlp.ni.content)
-        ds_tfidf = get_tfidf(ni_nlp.ni.header, content)
-        # pprint(list(zip(ds_tfidf, ni_nlp.ni.content))[:3])
-        ds_gensim = get_gensim_doc_similarity_scores(ni_nlp.ni.header, content)
-        # pprint(list(zip(ds_gensim, ni_nlp.ni.content))[:3])
+        ds_tfidf = []
+        ds_gensim = []
+        if content:
+            ds_tfidf = get_tfidf(ni_nlp.ni.header, content)
+            # pprint(list(zip(ds_tfidf, ni_nlp.ni.content))[:3])
+            ds_gensim = get_gensim_doc_similarity_scores(ni_nlp.ni.header, content)
+            # pprint(list(zip(ds_gensim, ni_nlp.ni.content))[:3])
 
         for dst, dsg, c, idx in zip(ds_tfidf, ds_gensim, content, range(len(content))):
             if idx < 3:

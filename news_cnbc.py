@@ -5,6 +5,9 @@ import os
 import datetime
 
 class NewsItem_CNBC(NewsItem):
+    URLS = [
+        "https://www.cnbc.com/finance/"
+    ]
     @classmethod
     def yield_news(cls, soup: bs4.BeautifulSoup, base_url: str):
         for s in soup.findAll("div"):
@@ -21,7 +24,14 @@ class NewsItem_CNBC(NewsItem):
                     ""
                 )
                 yield n
+    @classmethod
+    def cleanup_content(cls, content: list):
+        return content
     
+    @classmethod
+    def cleanup_content_item(cls, c: str, i: int):
+        return c
+
     def extract_header(self, soup: bs4.BeautifulSoup):
         self.header = soup.find("div", {"class", "ArticleHeader-headerContentContainer"}).find("h1").text
     
@@ -91,5 +101,5 @@ def process(front_url):
     return front_html, front_json
 
 if __name__ == "__main__":
-    front_url = "https://www.cnbc.com/finance/"
-    
+    for front_url in NewsItem_CNBC.URLS:
+        html_path, json_path = process(front_url)

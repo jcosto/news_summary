@@ -64,7 +64,7 @@ def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
         # ni_nlp = NewsItemNLP() #remove when running
         p = document.add_paragraph()
 
-        header = p.add_run(ni_nlp.ni.header + ".")
+        header = p.add_run(ni_nlp.ni.header.strip() + ".")
         apply_font(header)
         header.font.color.rgb = RGBColor(255,134,134)
         header.bold = True
@@ -79,6 +79,10 @@ def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
     
     document.save(docx_path)
 
+docx_out = os.path.join(out_dir, "docx")
+if not os.path.exists(docx_out):
+    os.makedirs(docx_out)
+
 if __name__ == "__main__":
     a = r"D:\dev local\news_summary\out\json\https___www_reuters_com_business_finance_.json"
 
@@ -86,10 +90,7 @@ if __name__ == "__main__":
 
     b = os.path.join(json_dir, fa + "--nlp" + fb)
     b_applied = os.path.join(json_dir, fa + "--nlp--applied" + fb)
-    
-    docx_out = os.path.join(out_dir, "docx")
-    if not os.path.exists(docx_out):
-        os.makedirs(docx_out)
+
     docx_path = os.path.join(docx_out, fa + ".docx")
     
     convert_ng_nlp_to_docx(b_applied, docx_path)

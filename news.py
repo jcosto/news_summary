@@ -1,7 +1,7 @@
 """
 todo:
-word formatting from python (python-docx)
-tf-idf and semantic similarity on summary sentences to prevent repeating article header
+(DONE) word formatting from python (python-docx)
+(DONE) tf-idf and semantic similarity on summary sentences to prevent repeating article header
 ph vs ROW news: how to get geographic source of data from article?
 tf-idf/semantic similarity to rank news based on duplication among news sources
 
@@ -20,6 +20,10 @@ https://www.gmanetwork.com/news/money/
 
 maybe todo
 https://www.manilatimes.net/business
+
+
+errors:
+due to reuse of raw content in nlp summary, reuters has extra info not needed. content cleanup doesn't seem to work
 """
 from pprint import pprint
 from typing import Callable, List
