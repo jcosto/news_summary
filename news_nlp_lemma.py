@@ -5,11 +5,11 @@ https://towardsdatascience.com/how-to-rank-text-content-by-semantic-similarity-4
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 import nltk
-nltk.download('wordnet')
-nltk.download('stopwords')
+# nltk.download('wordnet')
+# nltk.download('stopwords')
 from nltk.corpus import stopwords
 
-nltk.download('punkt')
+# nltk.download('punkt')
 stop_words = set(stopwords.words('english'))
 
 class LemmaTokenizer:

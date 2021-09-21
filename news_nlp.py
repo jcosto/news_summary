@@ -1,3 +1,6 @@
+"""
+header separated using static value (tfidf * semantic similarity < 0.1)
+"""
 from dataclasses import asdict, dataclass, field
 import os
 from typing import Callable, List
@@ -68,8 +71,8 @@ from pprint import pprint
 from news import json_dir
 from news_reuters import NewsItem_Reuters
 
-def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
-    with open(nlp_json_path,'r') as fin:
+def get_ng_nlp_from_json(json_path):
+    with open(json_path,'r') as fin:
         ng_nlp_list = json.load(fin)
     
     ng_nlp_obj_list = list()
@@ -78,6 +81,14 @@ def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
             NewsItem(**ng_nlp_dict['ni']),
             content_header_similarity=ng_nlp_dict["content_header_similarity"]
         )
+        ng_nlp_obj_list.append(ni_nlp)
+    return ng_nlp_obj_list
+
+def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
+    
+    ng_nlp_dict_list = list()
+    for ni_nlp in get_ng_nlp_from_json(nlp_json_path):
+        
         print(ni_nlp.ni.header)
         summary = list()
         summary_scores = list()
@@ -85,7 +96,7 @@ def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
             if len(summary) == 2:
                 break
             if idx < 5:
-                ds_t, ds_g, c = ds_ds_c["ds_tfidf"], ds_ds_c["ds_gensim"], ds_ds_c["content"]
+                ds_t, ds_g, c = ds_ds_c["ds_tfidf"], ds_ds_c["ds_gensim"], ni_nlp.ni.content[idx]
                 ds = ds_t * ds_g
                 if idx == 0 and ds > 0.1:
                     continue
@@ -96,12 +107,11 @@ def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
         # pprint(summary)
         print(summary_scores)
         ni_nlp.ni.summary = ' '.join(summary)
-        ng_nlp_obj_list.append(asdict(ni_nlp))
+        ng_nlp_dict_list.append(asdict(ni_nlp))
 
-        ng_nlp_dict['ni']['summary'] = summary
 
     with open(nlp_applied_json_path, 'w') as fout:
-        json.dump(ng_nlp_obj_list, fout, sort_keys=True, indent=4)
+        json.dump(ng_nlp_dict_list, fout, sort_keys=True, indent=4)
     
     print(f"saved applied nlp to {nlp_applied_json_path}")
 
@@ -114,7 +124,7 @@ if __name__ == "__main__":
     b = os.path.join(json_dir, fa + "--nlp" + fb)
     b_applied = os.path.join(json_dir, fa + "--nlp--applied" + fb)
 
-    process_ng(a, b,content_preprocess_fun=NewsItem_Reuters.cleanup_content)
+    # process_ng(a, b,content_preprocess_fun=NewsItem_Reuters.cleanup_content)
 
     process_nlp_applied(b, b_applied)
 

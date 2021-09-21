@@ -6,7 +6,7 @@ import datetime
 
 class NewsItem_Reuters(NewsItem):
     @classmethod
-    def yield_news_reuters(cls, soup: bs4.BeautifulSoup, base_url: str):
+    def yield_news(cls, soup: bs4.BeautifulSoup, base_url: str):
         story_collections = soup.findAll("div")
         for s in story_collections:
             # print(s["class"])
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     front_html = os.path.join(html_dir, front_filesafe + ".html")
     front_json = os.path.join(json_dir, front_filesafe + ".json")
     ng = NewsGroup("https://www.reuters.com", front_url, front_html, front_json)
-    for n in ng.extract_soup(NewsItem_Reuters.yield_news_reuters, hold_proc=False):
+    for n in ng.extract_soup(NewsItem_Reuters.yield_news, hold_proc=False):
         print(n.base_url)
         print(n.url)
         n.extract_news_content(html_dir, hold_proc=False)

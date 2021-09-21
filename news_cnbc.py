@@ -6,7 +6,7 @@ import datetime
 
 class NewsItem_CNBC(NewsItem):
     @classmethod
-    def yield_news_reuters(cls, soup: bs4.BeautifulSoup, base_url: str):
+    def yield_news(cls, soup: bs4.BeautifulSoup, base_url: str):
         for s in soup.findAll("div"):
             # print(s["class"])
             # print(['StoryCollection__story' in c for c in s["class"]])
@@ -77,15 +77,19 @@ class NewsItem_CNBC(NewsItem):
     def cleanup_data(self):
         self.date = datetime.datetime.strptime(self.full_date[:10],"%Y-%m-%d").isoformat()
 
-if __name__ == "__main__":
-    front_url = "https://www.cnbc.com/finance/"
+def process(front_url):
     front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
     front_html = os.path.join(html_dir, front_filesafe)
     front_json = os.path.join(json_dir, front_filesafe)
     ng = NewsGroup("https://www.cnbc.com", front_url, front_html, front_json)
-    for n in ng.extract_soup(NewsItem_CNBC.yield_news_reuters, hold_proc=False):
+    for n in ng.extract_soup(NewsItem_CNBC.yield_news, hold_proc=False):
         print(n.base_url)
         print(n.url)
         n.extract_news_content(html_dir, hold_proc=False)
         n.cleanup_data()
     ng.save_json()
+    return front_html, front_json
+
+if __name__ == "__main__":
+    front_url = "https://www.cnbc.com/finance/"
+    
