@@ -64,7 +64,8 @@ class NewsItem_Reuters(NewsItem):
             except IndexError:
                 pass
         if c_.endswith("read more "):
-            c_ = c_[:len("read more ")]
+            c_ = c_[:-1 * len("read more ")]
+        c_ = c_.strip()
         return c_
 
     def extract_header(self, soup: bs4.BeautifulSoup):
@@ -99,7 +100,8 @@ class NewsItem_Reuters(NewsItem):
                         summary.append(p.text)
                     content.append(p.text)
         self.summary = ' '.join(summary)
-        self.content = content
+        self.content = list(content)
+        self.content_raw = list(content)
 
     def extract_news_content(self, news_content_html_dir, sleep_s=0, hold_proc=True):
         url = self.url
@@ -118,7 +120,8 @@ class NewsItem_Reuters(NewsItem):
     def cleanup_data(self):
         n = self
         n.date = datetime.datetime.strptime(','.join(n.full_date.split(",")[:2]), r"%B %d, %Y").isoformat()
-        n.summary = n.summary.split("(Reuters) - ")[1]
+        n.content = NewsItem_Reuters.cleanup_content(n.content)
+        n.summary = ' '.join(n.content)
 
 def process(front_url):
     front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
@@ -126,10 +129,16 @@ def process(front_url):
     front_json = os.path.join(json_dir, front_filesafe + ".json")
     ng = NewsGroup("https://www.reuters.com", front_url, front_html, front_json)
     for n in ng.extract_soup(NewsItem_Reuters.yield_news, hold_proc=False):
+        print("------------")
         print(n.base_url)
         print(n.url)
         n.extract_news_content(html_dir, hold_proc=False)
         n.cleanup_data()
+        
+        for i, j in zip(n.content, n.content_raw):
+            print("-- " + i)
+            print("++ " + j)
+        # input("enter to continue...")
     ng.save_json()
     return front_html, front_json
 

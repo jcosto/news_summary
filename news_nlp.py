@@ -3,7 +3,7 @@ header separated using static value (tfidf * semantic similarity < 0.1)
 """
 from dataclasses import asdict, dataclass, field
 import os
-from typing import Callable, List
+from typing import List, Union
 from news import NewsItem
 
 @dataclass
@@ -31,39 +31,42 @@ def get_gensim_doc_similarity_scores(search_terms, documents):
         [preprocess(document) for document in documents]
     )
 
-def process_ng(
-    ng_json_path, output_json_path,
-    content_preprocess_fun: Callable = lambda x_list: x_list
+def process_ng(n: Union[dict, NewsItem]):
+    if isinstance(n, dict):
+        ni_nlp = NewsItemNLP.from_news_item_dict(n)
+    elif isinstance(n, NewsItem):
+        ni_nlp = NewsItemNLP(n)
+
+    print(ni_nlp.ni.header)
+    content = ni_nlp.ni.content
+    ds_tfidf = []
+    ds_gensim = []
+    if content:
+        ds_tfidf = get_tfidf(ni_nlp.ni.header, content)
+        # pprint(list(zip(ds_tfidf, ni_nlp.ni.content))[:3])
+        ds_gensim = get_gensim_doc_similarity_scores(ni_nlp.ni.header, content)
+        # pprint(list(zip(ds_gensim, ni_nlp.ni.content))[:3])
+
+    for dst, dsg, c, idx in zip(ds_tfidf, ds_gensim, content, range(len(content))):
+        if idx < 3:
+            pprint([dst, dsg, c])
+        ni_nlp.content_header_similarity.append({
+            "ds_tfidf": float(dst),
+            "ds_gensim": float(dsg),
+            "content": c
+        })
+    
+    return ni_nlp
+
+def process_ng__json(
+    ng_json_path, output_json_path
 ):
     with open(ng_json_path, 'r') as fin:
         nlist = json.load(fin)
     ni_nlp_list = list()
     for ndict in nlist:
-        ni_nlp = NewsItemNLP.from_news_item_dict(ndict)
-
-        print(ni_nlp.ni.header)
-        content = content_preprocess_fun(ni_nlp.ni.content)
-        ds_tfidf = []
-        ds_gensim = []
-        if content:
-            ds_tfidf = get_tfidf(ni_nlp.ni.header, content)
-            # pprint(list(zip(ds_tfidf, ni_nlp.ni.content))[:3])
-            ds_gensim = get_gensim_doc_similarity_scores(ni_nlp.ni.header, content)
-            # pprint(list(zip(ds_gensim, ni_nlp.ni.content))[:3])
-
-        for dst, dsg, c, idx in zip(ds_tfidf, ds_gensim, content, range(len(content))):
-            if idx < 3:
-                pprint([dst, dsg, c])
-            ni_nlp.content_header_similarity.append({
-                "ds_tfidf": float(dst),
-                "ds_gensim": float(dsg),
-                "content": c
-            })
-        
-        d = asdict(ni_nlp)
-        # d['ni'] = asdict(d['ni'])
-
-        ni_nlp_list.append(d)
+        ni_nlp = process_ng(ndict)
+        ni_nlp_list.append(asdict(ni_nlp))
     with open(output_json_path, 'w') as fout:
         json.dump(ni_nlp_list, fout, sort_keys=True, indent=4)
     print(f"saved nlp results to {output_json_path}")
@@ -72,7 +75,6 @@ def process_ng(
 import json
 from pprint import pprint
 from news import json_dir
-from news_reuters import NewsItem_Reuters
 
 def get_ng_nlp_from_json(json_path):
     with open(json_path,'r') as fin:
@@ -87,32 +89,33 @@ def get_ng_nlp_from_json(json_path):
         ng_nlp_obj_list.append(ni_nlp)
     return ng_nlp_obj_list
 
-def process_nlp_applied(nlp_json_path, nlp_applied_json_path):
+def process_nlp_applied(ni_nlp: NewsItemNLP):
+    print(ni_nlp.ni.header)
+    summary = list()
+    summary_scores = list()
+    for ds_ds_c, idx in zip(ni_nlp.content_header_similarity, range(len(ni_nlp.content_header_similarity))):
+        if len(summary) == 2:
+            break
+        if idx < 5:
+            ds_t, ds_g, c = ds_ds_c["ds_tfidf"], ds_ds_c["ds_gensim"], ni_nlp.ni.content[idx]
+            ds = ds_t * ds_g
+            if idx == 0 and ds > 0.1:
+                continue
+            # pprint([ds, c[:50]])
+            summary.append(c)
+            print(c)
+            summary_scores.append(ds)
+    # pprint(summary)
+    print(summary_scores)
+    ni_nlp.ni.summary = ' '.join(summary)
+    return ni_nlp
+
+def process_nlp_applied__json(nlp_json_path, nlp_applied_json_path):
     
     ng_nlp_dict_list = list()
     for ni_nlp in get_ng_nlp_from_json(nlp_json_path):
-        
-        print(ni_nlp.ni.header)
-        summary = list()
-        summary_scores = list()
-        for ds_ds_c, idx in zip(ni_nlp.content_header_similarity, range(len(ni_nlp.content_header_similarity))):
-            if len(summary) == 2:
-                break
-            if idx < 5:
-                ds_t, ds_g, c = ds_ds_c["ds_tfidf"], ds_ds_c["ds_gensim"], ni_nlp.ni.content[idx]
-                ds = ds_t * ds_g
-                if idx == 0 and ds > 0.1:
-                    continue
-                # pprint([ds, c[:50]])
-                summary.append(c)
-                print(c)
-                summary_scores.append(ds)
-        # pprint(summary)
-        print(summary_scores)
-        ni_nlp.ni.summary = ' '.join(summary)
+        ni_nlp = process_nlp_applied(ni_nlp)
         ng_nlp_dict_list.append(asdict(ni_nlp))
-
-
     with open(nlp_applied_json_path, 'w') as fout:
         json.dump(ng_nlp_dict_list, fout, sort_keys=True, indent=4)
     
@@ -127,9 +130,9 @@ if __name__ == "__main__":
     b = os.path.join(json_dir, fa + "--nlp" + fb)
     b_applied = os.path.join(json_dir, fa + "--nlp--applied" + fb)
 
-    # process_ng(a, b,content_preprocess_fun=NewsItem_Reuters.cleanup_content)
+    process_ng__json(a, b)
 
-    process_nlp_applied(b, b_applied)
+    process_nlp_applied__json(b, b_applied)
 
     
 

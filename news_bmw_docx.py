@@ -60,6 +60,11 @@ def apply_font(run_, rgb_color: RGBColor=None):
 
 def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
     document = Document()
+    style = document.styles['Normal']
+    font = style.font
+    font.name = 'Arial'
+    font.size = Pt(8)
+
     for ni_nlp in get_ng_nlp_from_json(ng_nlp_json_path):
         # ni_nlp = NewsItemNLP() #remove when running
         p = document.add_paragraph()
@@ -76,6 +81,8 @@ def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
         # r = p.add_run(ni_nlp.ni.url)
         hl, r = add_hyperlink(p, ni_nlp.ni.url, ni_nlp.ni.url, "7EB1FF", True)
         p.add_run("\n")
+
+        p.style = document.styles['Normal']
     
     document.save(docx_path)
 

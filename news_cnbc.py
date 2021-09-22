@@ -60,7 +60,8 @@ class NewsItem_CNBC(NewsItem):
         
         self.summary = ' '.join(summary)
         print(self.summary)
-        self.content = content
+        self.content = list(content)
+        self.content_raw = list(content)
 
     def extract_news_content(
         self,
@@ -86,6 +87,7 @@ class NewsItem_CNBC(NewsItem):
         
     def cleanup_data(self):
         self.date = datetime.datetime.strptime(self.full_date[:10],"%Y-%m-%d").isoformat()
+        self.content = NewsItem_CNBC.cleanup_content(self.content)
 
 def process(front_url):
     front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
@@ -93,10 +95,16 @@ def process(front_url):
     front_json = os.path.join(json_dir, front_filesafe)
     ng = NewsGroup("https://www.cnbc.com", front_url, front_html, front_json)
     for n in ng.extract_soup(NewsItem_CNBC.yield_news, hold_proc=False):
+        print("------------")
         print(n.base_url)
         print(n.url)
         n.extract_news_content(html_dir, hold_proc=False)
         n.cleanup_data()
+        
+        for i, j in zip(n.content, n.content_raw):
+            print("-- " + i)
+            print("++ " + j)
+        # input("enter to continue...")
     ng.save_json()
     return front_html, front_json
 

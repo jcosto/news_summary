@@ -22,7 +22,7 @@ from news import json_dir
 from news_cnbc import process as process_ng_cnbc, NewsItem_CNBC
 from news_reuters import process as process_ng_reuters, NewsItem_Reuters
 
-from news_nlp import process_ng, process_nlp_applied
+from news_nlp import process_ng__json, process_nlp_applied__json
 from news_bmw_docx import convert_ng_nlp_to_docx, docx_out
 
 def process_news_to_docx(ni_cls, process: Callable):
@@ -34,9 +34,9 @@ def process_news_to_docx(ni_cls, process: Callable):
         b = os.path.join(json_dir, fa + "--nlp" + fb)
         b_applied = os.path.join(json_dir, fa + "--nlp--applied" + fb)
         
-        process_ng(json_path, b, ni_cls.cleanup_content)
+        process_ng__json(json_path, b, ni_cls.cleanup_content)
 
-        process_nlp_applied(b, b_applied)
+        process_nlp_applied__json(b, b_applied)
 
         docx_path = os.path.join(docx_out, fa + ".docx")
 

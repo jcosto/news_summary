@@ -107,6 +107,7 @@ class NewsItem():
     full_date: str = None
     dt: datetime.datetime = None
     content: List = field(default_factory=lambda : list())
+    content_raw: List = field(default_factory=lambda : list())
     @classmethod
     def yield_news_reuters(cls, soup: bs4.BeautifulSoup, base_url: str):
         pass
@@ -127,6 +128,9 @@ html_dir = os.path.join(out_dir, "html")
 dirs.append(html_dir)
 json_dir = os.path.join(out_dir, "json")
 dirs.append(json_dir)
+
+def get_filesafe_url(url: str):
+    return url.replace(":","_").replace("/","_").replace(".","_")
 
 for d in dirs:
     if not os.path.exists(d):
