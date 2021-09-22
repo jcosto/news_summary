@@ -19,8 +19,9 @@ postprocess:
 import os
 from typing import Callable
 from news import json_dir
-from news_cnbc import process as process_ng_cnbc, NewsItem_CNBC
-from news_reuters import process as process_ng_reuters, NewsItem_Reuters
+from news_sources.news_cnbc import process as process_ng_cnbc, NewsItem_CNBC
+from news_sources.news_reuters import process as process_ng_reuters, NewsItem_Reuters
+from news_sources.news_cnn import process as process_ng_cnn, NewsItem_CNN
 
 from news_nlp import process_ng__json, process_nlp_applied__json
 from news_bmw_docx import convert_ng_nlp_to_docx, docx_out
@@ -34,7 +35,7 @@ def process_news_to_docx(ni_cls, process: Callable):
         b = os.path.join(json_dir, fa + "--nlp" + fb)
         b_applied = os.path.join(json_dir, fa + "--nlp--applied" + fb)
         
-        process_ng__json(json_path, b, ni_cls.cleanup_content)
+        process_ng__json(json_path, b)
 
         process_nlp_applied__json(b, b_applied)
 
@@ -44,7 +45,8 @@ def process_news_to_docx(ni_cls, process: Callable):
 
 if __name__ == "__main__":
     for process, ni_cls in [
-        [process_ng_cnbc, NewsItem_CNBC],
-        [process_ng_reuters, NewsItem_Reuters],
+        # [process_ng_cnbc, NewsItem_CNBC],
+        # [process_ng_reuters, NewsItem_Reuters],
+        [process_ng_cnn, NewsItem_CNN],
     ]:
         process_news_to_docx(ni_cls, process)
