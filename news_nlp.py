@@ -57,16 +57,28 @@ def process_ng(n: Union[dict, NewsItem]):
         })
     
     return ni_nlp
-
+from threading import Thread
 def process_ng__json(
     ng_json_path, output_json_path
 ):
     with open(ng_json_path, 'r') as fin:
         nlist = json.load(fin)
     ni_nlp_list = list()
-    for ndict in nlist:
+    t_list = list()
+    def process(ndict):
         ni_nlp = process_ng(ndict)
         ni_nlp_list.append(asdict(ni_nlp))
+    for ndict in nlist:
+        t = Thread(target=process, args=[ndict], daemon=True)
+        t_list.append(t)
+        t.start()
+        if len(t_list) >= 8:
+            for t in t_list:
+                t.join()
+            t_list = list()
+    for t in t_list:
+        t.join()
+        
     with open(output_json_path, 'w') as fout:
         json.dump(ni_nlp_list, fout, sort_keys=True, indent=4)
     print(f"saved nlp results to {output_json_path}")

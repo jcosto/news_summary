@@ -29,21 +29,23 @@ docs_idx = [[i,d] for i,d in enumerate(docs)]
 # DOCUMENT SIMILARITY
 found_ids = set()
 found_groups = list()
-for idx, doc in enumerate(docs):
+def process_doc(docs_idx, idx, doc):
     these_docs = [[i,d] for i,d in docs_idx if i != idx and i not in found_ids]
     this_group = [[idx, doc]]
     found_ids.add(idx)
     if these_docs:
         ds_tfidf = get_tfidf(doc ,[i_d[1] for i_d in these_docs])
-        ds_gensim = get_doc_similarity_scores(
-            preprocess(doc), [preprocess(i_d[1]) for i_d in these_docs]
-        )
+        ds_gensim = [1] * len(ds_tfidf)
+        # ds_gensim = get_doc_similarity_scores(
+        #     preprocess(doc), [preprocess(i_d[1]) for i_d in these_docs]
+        # )
         # print(document_scores[0])
         i_s_d = [
             [i_d[0], s_tfidf, s_gensim, i_d[1]]
             for i_d, s_tfidf, s_gensim
             in zip(these_docs, ds_tfidf, ds_gensim)
-            if s_tfidf * s_gensim > 0.1
+            # if s_tfidf * s_gensim > 0.1
+            if s_tfidf * s_gensim > 0.2
         ]
         i_s_d.sort(reverse=True, key=lambda x: x[1] * x[2])
         if i_s_d:
@@ -58,5 +60,11 @@ for idx, doc in enumerate(docs):
                 print("--", i, round(s_tfidf * s_gensim,3), d[:100])
             # input("enter to continue...")
     found_groups.append(this_group)
+
+for idx, doc in enumerate(docs):
+    process_doc(docs_idx, idx, doc)
+
+
+    
 print(f"found {len(docs_idx)} docs, {len(found_groups)} groups")
 
