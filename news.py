@@ -31,19 +31,32 @@ from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 import time
 import os
+import requests
+def get_page_source_selenium(url, sleep_s=0):
+    driver = webdriver.Edge()
+    driver.get(url)
+    page_source = driver.page_source
+    if sleep_s > 0:
+        time.sleep(sleep_s)
+    driver.quit()
+    return page_source
 
-def get_page_source(url, dst, sleep_s=0, hold_proc=True):
+def get_page_source_requests(url, sleep_s=0):
+    page = requests.get(url)
+    return page.text
+
+def get_page_source(url, dst, sleep_s=0, hold_proc=True, use_selenium=False):
+    print(dst)
     if os.path.exists(dst):
         with open(dst,'r', encoding='utf8') as fin:
             ret = fin.read()
         if len(ret) > 0:
             return ret
     
-    driver = webdriver.Edge()
-    driver.get(url)
-    page_source = driver.page_source
-    if sleep_s > 0:
-        time.sleep(sleep_s)
+    if use_selenium:
+        page_source = get_page_source_selenium(url, sleep_s=sleep_s)
+    else:
+        page_source = get_page_source_requests(url)
     
     with open(dst, 'w', encoding='utf8') as fout:
         fout.write(page_source)
@@ -51,7 +64,7 @@ def get_page_source(url, dst, sleep_s=0, hold_proc=True):
     if hold_proc:
         input("pausing execution, press enter to continue...")
 
-    driver.quit()
+    
     return page_source
 
 def get_filesafe_url(url):
