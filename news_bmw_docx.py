@@ -58,33 +58,42 @@ def apply_font(run_, rgb_color: RGBColor=None):
     else:
         run_.font.color.rgb = rgb_color
 
-def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
+def convert_ng_nlp_iterable_to_docx(ni_iterable, docx_path):
     document = Document()
     style = document.styles['Normal']
     font = style.font
     font.name = 'Arial'
     font.size = Pt(8)
 
-    for ni_nlp in get_ng_nlp_from_json(ng_nlp_json_path):
+    for ni in ni_iterable:
         # ni_nlp = NewsItemNLP() #remove when running
         p = document.add_paragraph()
 
-        header = p.add_run(ni_nlp.ni.header.strip() + ".")
+        header = p.add_run(ni.header.strip() + ".")
         apply_font(header)
         header.font.color.rgb = RGBColor(255,134,134)
         header.bold = True
         
         p.add_run(" ")
-        r = p.add_run(ni_nlp.ni.summary)
+        r = p.add_run(ni.summary)
         apply_font(r)
         p.add_run("\n")
         # r = p.add_run(ni_nlp.ni.url)
-        hl, r = add_hyperlink(p, ni_nlp.ni.url, ni_nlp.ni.url, "7EB1FF", True)
+        hl, r = add_hyperlink(p, ni.url, ni.url, "7EB1FF", True)
         p.add_run("\n")
 
         p.style = document.styles['Normal']
     
     document.save(docx_path)
+    print(f"saved {docx_path}")
+
+def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
+    convert_ng_nlp_iterable_to_docx(
+        [
+            ni_nlp.ni for ni_nlp
+            in get_ng_nlp_from_json(ng_nlp_json_path)
+        ], docx_path
+    )
 
 docx_out = os.path.join(out_dir, "docx")
 if not os.path.exists(docx_out):

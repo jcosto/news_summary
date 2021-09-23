@@ -136,3 +136,9 @@ for d in dirs:
     if not os.path.exists(d):
         os.makedirs(d)
 
+@dataclass
+class NewsMinimal():
+    url: str
+    header: str
+    summary: str
+    doc: str
