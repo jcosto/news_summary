@@ -54,8 +54,9 @@ def process_doc(docs_idx, idx, doc):
             # if s_tfidf * s_gensim > 0.1
             # if s_tfidf * s_gensim > 0.2
             # if s_tfidf * s_gensim > 0.3145949151248746 # s, Kmeans min of top 5
-            if s_tfidf * s_gensim > 0.21288589997820936 # SVM plane using s, Kmeans label of top 5
+            # if s_tfidf * s_gensim > 0.21288589997820936 # SVM plane using s, Kmeans label of top 5
             # if s_tfidf * s_gensim > 0.15340770596103756 # SVM plane using s, Kmeans label of all scores
+            if s_tfidf * s_gensim > 0.3372818715488682 # more docs
         ]
         i_s_d.sort(reverse=True, key=lambda x: x[1] * x[2])
         if i_s_d:
@@ -74,7 +75,7 @@ def process_doc(docs_idx, idx, doc):
 from threading import Thread
 t_list = list()
 for idx, doc in enumerate(docs):
-    process_doc(docs_idx, idx, doc)
+    # process_doc(docs_idx, idx, doc)
     t = Thread(target=process_doc, args=[docs_idx, idx, doc], daemon=True)
     t.start()
     t_list.append(t)

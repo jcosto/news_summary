@@ -6,7 +6,7 @@ from news import html_dir, json_dir
 import bs4
 import os
 import datetime
-
+found_urls = set()
 class NewsItem_GMA(NewsItem):
     BASE_URL = "https://www.gmanetwork.com/"
     URLS = [
@@ -27,6 +27,9 @@ class NewsItem_GMA(NewsItem):
             url = s['href']
             if url.endswith("/photo/"):
                 continue
+            if url in found_urls:
+                continue
+            found_urls.add(found_urls)
 
             n = NewsItem_GMA(
                 base_url,
