@@ -78,6 +78,7 @@ class NewsItem_Inquirer(NewsItem):
             if not this_text is None:
                 if len(this_text) == 0:
                     continue
+                this_text = this_text.replace("ADVERTISEMENT\n\n\n\n\n\n","").strip()
                 if len(summary) < 2:
                     print(this_text)
                     summary.append(this_text)
@@ -94,12 +95,14 @@ class NewsItem_Inquirer(NewsItem):
     def extract_news_content(
         self,
         news_content_html_dir,
-        sleep_s=0, hold_proc=True
+        sleep_s=0, hold_proc=True,
+        use_selenium=False
     ):
         url = self.url
         page_source = get_page_source(
             url, os.path.join(news_content_html_dir, get_filesafe_url(url)),
-            sleep_s=sleep_s, hold_proc=hold_proc
+            sleep_s=sleep_s, hold_proc=hold_proc,
+            use_selenium=use_selenium
         )
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
                 
@@ -108,6 +111,8 @@ class NewsItem_Inquirer(NewsItem):
         self.extract_full_date(soup)
 
         self.extract_summary_content(soup)
+
+        return self
         
     def cleanup_data(self):
         print(' '.join(self.full_date.split()[-3:]))
@@ -115,41 +120,9 @@ class NewsItem_Inquirer(NewsItem):
         self.date = datetime.datetime.strptime(' '.join(self.full_date.split()[-3:]),r"%B %d, %Y").isoformat()
         # self.content = NewsItem_Inquirer.cleanup_content(self.content)
 
-def process_item(n: NewsItem_Inquirer):
-    print("------------")
-    print(n.base_url)
-    print(n.url)
-    n.extract_news_content(html_dir, hold_proc=False)
-    n.cleanup_data()
-    
-    for i, j in zip(n.content, n.content_raw):
-        print("-- " + i)
-        print("++ " + j)
-    # input("enter to continue...")
-
-from threading import Thread
-def process(front_url):
-    front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
-    front_html = os.path.join(html_dir, front_filesafe)
-    front_json = os.path.join(json_dir, front_filesafe)
-    ng = NewsGroup(NewsItem_Inquirer.BASE_URL, front_url, front_html, front_json)
-    t_list = list()
-    for n in ng.extract_soup(NewsItem_Inquirer.yield_news, hold_proc=False):
-        # process_item(n)
-        t = Thread(target=process_item, args=[n], daemon=True)
-        t_list.append(t)
-        t.start()
-        t_list.append(t)
-        if len(t_list) > 4:
-            for t_ in t_list:
-                t_.join()
-            t_list = list()
-    for t in t_list:
-        t.join()
-
-    ng.save_json()
-    return front_html, front_json
-
 if __name__ == "__main__":
     for front_url in NewsItem_Inquirer.URLS:
-        html_path, json_path = process(front_url)
+        html_path, json_path, ng = NewsGroup.process(
+            NewsItem_Inquirer, front_url,
+            html_dir_=html_dir, json_dir_=json_dir
+        )

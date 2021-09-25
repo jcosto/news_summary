@@ -5,6 +5,7 @@ import os
 import datetime
 
 class NewsItem_CNBC(NewsItem):
+    BASE_URL = "https://www.cnbc.com"
     URLS = [
         "https://www.cnbc.com/finance/"
     ]
@@ -66,15 +67,20 @@ class NewsItem_CNBC(NewsItem):
     def extract_news_content(
         self,
         news_content_html_dir,
-        sleep_s=0, hold_proc=True
+        sleep_s=0, hold_proc=True,
+        use_selenium=False
     ):
         url = self.url
         page_source = get_page_source(
             url, os.path.join(news_content_html_dir, get_filesafe_url(url)),
-            sleep_s=sleep_s, hold_proc=hold_proc
+            sleep_s=sleep_s, hold_proc=hold_proc,
+            use_selenium=use_selenium
         )
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
         
+        if "We're sorry, the page you were looking for cannot be found." in soup.text:
+            return None
+
         a = soup.find("a", {"class": "ArticleHeader-eyebrow"})
         if a:
             self.section = a.text
@@ -84,30 +90,16 @@ class NewsItem_CNBC(NewsItem):
         self.extract_full_date(soup)
 
         self.extract_summary_content(soup)
+
+        return self
         
     def cleanup_data(self):
         self.date = datetime.datetime.strptime(self.full_date[:10],"%Y-%m-%d").isoformat()
         self.content = NewsItem_CNBC.cleanup_content(self.content)
 
-def process(front_url):
-    front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
-    front_html = os.path.join(html_dir, front_filesafe)
-    front_json = os.path.join(json_dir, front_filesafe)
-    ng = NewsGroup("https://www.cnbc.com", front_url, front_html, front_json)
-    for n in ng.extract_soup(NewsItem_CNBC.yield_news, hold_proc=False):
-        print("------------")
-        print(n.base_url)
-        print(n.url)
-        n.extract_news_content(html_dir, hold_proc=False)
-        n.cleanup_data()
-        
-        for i, j in zip(n.content, n.content_raw):
-            print("-- " + i)
-            print("++ " + j)
-        # input("enter to continue...")
-    ng.save_json()
-    return front_html, front_json
-
 if __name__ == "__main__":
     for front_url in NewsItem_CNBC.URLS:
-        html_path, json_path = process(front_url)
+        html_path, json_path, ng = NewsGroup.process(
+            NewsItem_CNBC, front_url,
+            html_dir_=html_dir, json_dir_=json_dir
+        )

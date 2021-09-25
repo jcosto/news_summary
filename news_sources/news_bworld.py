@@ -1,5 +1,5 @@
 """
-gma loads pretty slow using selenium
+gma loads pretty slow
 """
 from news import NewsGroup, NewsItem, has_class_name, get_page_source, get_filesafe_url
 from news import html_dir, json_dir
@@ -7,38 +7,54 @@ import bs4
 import os
 import datetime
 found_urls = set()
-class NewsItem_GMA(NewsItem):
-    BASE_URL = "https://www.gmanetwork.com/"
+class NewsItem_BWorld(NewsItem):
+    BASE_URL = "https://www.bworldonline.com/"
     URLS = [
-        "https://www.gmanetwork.com/news/money"
+        "https://www.bworldonline.com/category/top-stories/",
+        "https://www.bworldonline.com/category/banking-finance/",
+        "https://www.bworldonline.com/category/economy/",
+        "https://www.bworldonline.com/category/corporate/",
+        "https://www.bworldonline.com/category/stock-market/",
     ]
     @classmethod
     def yield_news(cls, soup: bs4.BeautifulSoup, base_url: str):
-        for s in soup.findAll('a', {"class": "story_link"}):
-            # print(s["class"])
-            # print(['StoryCollection__story' in c for c in s["class"]])
+        for s in soup.find("div", {"class": "td-subcategory-header"}).findAll('div', {"class": "td-module-thumb"}):
+            s = s.parent
             # print(s)
-            # print(s)
-            try:
-                section = s.find("div", {"class": "subsection"}).text
-            except:
-                section = None
-
-            url = s['href']
-            if url.endswith("/photo/"):
-                continue
+            url = s.find("a")["href"]
             if url in found_urls:
                 continue
             found_urls.add(url)
+            header = s.find("h3", {"class": "entry-title"}).text
+            section = s.find("a", {"class": "td-post-category"}).text
 
-            n = NewsItem_GMA(
+            n = NewsItem_BWorld(
                 base_url,
-                s['href'],
+                url,
                 "",
-                s.find("div", {"class": "story_title"}).text,
+                header,
                 section
             )
-            print(s['href'])
+            print(url)
+            print("------")
+            yield n
+        for s in soup.find("div", {"class": "td-ss-main-content"}).findAll('div', {"class": "td_module_10"}):
+            url = s.find("a", {"class": "td-image-wrap"})["href"]
+            if url in found_urls:
+                continue
+            found_urls.add(url)
+            header = s.find("h3", {"class": "entry-title"}).text
+            section = ""
+            
+
+            n = NewsItem_BWorld(
+                base_url,
+                url,
+                "",
+                header,
+                section
+            )
+            print(url)
             print("------")
             yield n
         
@@ -51,23 +67,31 @@ class NewsItem_GMA(NewsItem):
         return c
 
     def extract_header(self, soup: bs4.BeautifulSoup):
-        self.header = soup.find("h1", {"class": "story_links"}).text
+        self.header = soup.find("h1", {"class": "entry-title"}).text
     
     def extract_full_date(self, soup: bs4.BeautifulSoup):
-        self.full_date = soup.find("div", {"class": "article-time"}).find("time")['datetime']
+        self.full_date = soup.find("time", {"class": "entry-date"})['datetime']
         print(self.full_date)
     
     def extract_summary_content(self, soup: bs4.BeautifulSoup):
         summary = list()
         content = list()
         from news import has_class_name
-        d = soup.find("div", {"class": "story_main"})
+        content_classes = ["td-post-content", "td-pb-padding-side"]
+        d = None
+        d__ = soup.find_all("div", {"class": content_classes})
+        for d_ in d__:
+            if has_class_name(d_, content_classes):
+                d = d_
+                break
         if not d:
-            return
+            raise RuntimeError(f"no content found for {self.url}")
         for d in d.children:
             if not d.name in ['p', 'ul', 'li']:
                 continue
-            this_text = d.text.strip()
+            this_text = d.text
+            if this_text.startswith("By ") and ", Reporter" in this_text:
+                continue
             if not this_text is None:
                 if len(this_text) == 0:
                     continue
@@ -113,8 +137,8 @@ class NewsItem_GMA(NewsItem):
         # self.content = NewsItem_Inquirer.cleanup_content(self.content)
 
 if __name__ == "__main__":
-    for front_url in NewsItem_GMA.URLS:
+    for front_url in NewsItem_BWorld.URLS:
         html_path, json_path, ng = NewsGroup.process(
-            NewsItem_GMA, front_url,
+            NewsItem_BWorld, front_url,
             html_dir_=html_dir, json_dir_=json_dir
         )

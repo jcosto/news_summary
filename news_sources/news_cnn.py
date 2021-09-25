@@ -5,6 +5,7 @@ import os
 import datetime
 
 class NewsItem_CNN(NewsItem):
+    BASE_URL = "https://edition.cnn.com"
     URLS = [
         "https://edition.cnn.com/business"
     ]
@@ -84,20 +85,27 @@ class NewsItem_CNN(NewsItem):
     def extract_news_content(
         self,
         news_content_html_dir,
-        sleep_s=0, hold_proc=True
+        sleep_s=0, hold_proc=True,
+        use_selenium=False
     ):
         url = self.url
         page_source = get_page_source(
             url, os.path.join(news_content_html_dir, get_filesafe_url(url)),
-            sleep_s=sleep_s, hold_proc=hold_proc
+            sleep_s=sleep_s, hold_proc=hold_proc,
+            use_selenium=use_selenium
         )
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
+
+        if "We're sorry, the page you were looking for cannot be found." in soup.text:
+            return None
                 
         self.extract_header(soup)
 
         self.extract_full_date(soup)
 
         self.extract_summary_content(soup)
+
+        return self
         
     def cleanup_data(self):
         print(' '.join(self.full_date.split()[-3:]))
@@ -105,35 +113,9 @@ class NewsItem_CNN(NewsItem):
         self.date = datetime.datetime.strptime(' '.join(self.full_date.split()[-3:]),r"%B %d, %Y").isoformat()
         self.content = NewsItem_CNN.cleanup_content(self.content)
 
-def process_item(n: NewsItem_CNN):
-    print("------------")
-    print(n.base_url)
-    print(n.url)
-    n.extract_news_content(html_dir, hold_proc=False)
-    n.cleanup_data()
-    
-    for i, j in zip(n.content, n.content_raw):
-        print("-- " + i)
-        print("++ " + j)
-    # input("enter to continue...")
-
-from threading import Thread
-def process(front_url):
-    front_filesafe = front_url.replace(":","_").replace("/","_").replace(".","_")
-    front_html = os.path.join(html_dir, front_filesafe)
-    front_json = os.path.join(json_dir, front_filesafe)
-    ng = NewsGroup("https://edition.cnn.com", front_url, front_html, front_json)
-    t_list = list()
-    for n in ng.extract_soup(NewsItem_CNN.yield_news, hold_proc=False):
-        t = Thread(target=process_item, args=[n], daemon=True)
-        t_list.append(t)
-        t.start()
-    # for t in t_list:
-        t.join()
-
-    ng.save_json()
-    return front_html, front_json
-
 if __name__ == "__main__":
     for front_url in NewsItem_CNN.URLS:
-        html_path, json_path = process(front_url)
+        html_path, json_path, ng = NewsGroup.process(
+            NewsItem_CNN, front_url,
+            html_dir_=html_dir, json_dir_=json_dir
+        )

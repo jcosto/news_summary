@@ -32,17 +32,44 @@ from selenium.webdriver.remote.webdriver import WebDriver as RemoteWebDriver
 import time
 import os
 import requests
+
+dirs = list()
+out_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'out')
+dirs.append(out_dir)
+html_dir = os.path.join(out_dir, "html")
+dirs.append(html_dir)
+json_dir = os.path.join(out_dir, "json")
+dirs.append(json_dir)
+
+def ensure_dirs_exist(dirs_):
+    for d in dirs_:
+        if not os.path.exists(d):
+            os.makedirs(d)
+
+ensure_dirs_exist(dirs)
+
+from msedge.selenium_tools import EdgeOptions, Edge
 def get_page_source_selenium(url, sleep_s=0):
-    driver = webdriver.Edge()
+    print("get_page_source_selenium")
+    options = EdgeOptions()
+    options.use_chromium = True
+    options.add_argument("headless")
+    options.add_argument("disable-gpu")
+    driver = Edge('MicrosoftWebDriver.exe', options=options)
+
+
     driver.get(url)
-    page_source = driver.page_source
+    
     if sleep_s > 0:
         time.sleep(sleep_s)
+    page_source = driver.page_source
     driver.quit()
     return page_source
 
 def get_page_source_requests(url, sleep_s=0):
+    print(f"getting page {url}")
     page = requests.get(url)
+    print(f"retrieved page {url}")
     return page.text
 
 def get_page_source(url, dst, sleep_s=0, hold_proc=True, use_selenium=False):
@@ -74,6 +101,7 @@ from dataclasses import dataclass, asdict, field
 import datetime
 import bs4
 import json
+from threading import Thread
 
 @dataclass
 class NewsGroup():
@@ -82,11 +110,46 @@ class NewsGroup():
     page_html_dst: str
     page_json_dst: str
     
-    def extract_soup(self, yield_news: Callable, sleep_s=0, hold_proc=True):
+    @classmethod
+    def process(
+        cls, news_item__cls, front_url, html_dir_=html_dir, json_dir_=json_dir, threaded=False, use_selenium_ng=False,
+        use_selenium_ni=False
+    ):
+        print(front_url)
+        front_filesafe = get_filesafe_url(front_url)
+        front_html = os.path.join(html_dir_, front_filesafe)
+        front_json = os.path.join(json_dir_, front_filesafe)
+        ng = NewsGroup(news_item__cls.BASE_URL, front_url, front_html, front_json)
+        n_gen = ng.extract_soup(news_item__cls.yield_news, hold_proc=False, use_selenium=use_selenium_ng)
+        
+        if threaded:
+            t_list = list()
+            for n in n_gen:
+                if isinstance(n, NewsItem):
+                    t = Thread(target=n.process_item, args=[html_dir_], kwargs={"use_selenium":use_selenium_ni},daemon=True)
+                    t_list.append(t)
+                    t.start()
+                    if len(t_list) > 8:
+                        for t_ in t_list:
+                            t_.join()
+                        t_list = list()
+            for t_ in t_list:
+                t_.join()
+        else:
+            for n in n_gen:
+                if isinstance(n, NewsItem):
+                    n.process_item(html_dir_, use_selenium=use_selenium_ni)
+
+
+        ng.save_json()
+        return front_html, front_json, ng
+
+    def extract_soup(self, yield_news: Callable, sleep_s=0, hold_proc=True, use_selenium=False):
         src_html_path = self.page_html_dst
         page_source = get_page_source(
             self.url, src_html_path,
-            sleep_s=sleep_s, hold_proc=hold_proc
+            sleep_s=sleep_s, hold_proc=hold_proc,
+            use_selenium=use_selenium
         )
 
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
@@ -106,7 +169,6 @@ class NewsGroup():
                 [asdict(i) for i in self.news_item__list],
                 fout, sort_keys=True, indent=4
             )
-    
 
 @dataclass
 class NewsItem():
@@ -125,6 +187,27 @@ class NewsItem():
     def yield_news_reuters(cls, soup: bs4.BeautifulSoup, base_url: str):
         pass
 
+    def extract_news_content(self, news_content_html_dir, sleep_s=0, hold_proc=True, use_selenium=False):
+        pass
+        
+    def cleanup_data(self):
+        pass
+
+    def process_item(self, html_dir_, use_selenium=False):
+        n = self
+        print("------------")
+        print(n.base_url)
+        print(n.url)
+        
+        a = n.extract_news_content(html_dir_, hold_proc=False, use_selenium=use_selenium)
+        
+        n.cleanup_data()
+    
+        for i, j in zip(n.content, n.content_raw):
+            print("-- " + i)
+            print("++ " + j)
+        # input("enter to continue...")
+
 def has_class_name(s, c_ref_list):
     try:
         meron = list()
@@ -133,21 +216,12 @@ def has_class_name(s, c_ref_list):
         return len(meron) == sum(meron)
     except KeyError:
         return False
-    
-dirs = list()
-out_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'out')
-dirs.append(out_dir)
-html_dir = os.path.join(out_dir, "html")
-dirs.append(html_dir)
-json_dir = os.path.join(out_dir, "json")
-dirs.append(json_dir)
+
 
 def get_filesafe_url(url: str):
     return url.replace(":","_").replace("/","_").replace(".","_")
 
-for d in dirs:
-    if not os.path.exists(d):
-        os.makedirs(d)
+
 
 @dataclass
 class NewsMinimal():
@@ -155,3 +229,4 @@ class NewsMinimal():
     header: str
     summary: str
     doc: str
+    date: str

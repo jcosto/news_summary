@@ -87,11 +87,11 @@ def convert_ng_nlp_iterable_to_docx(ni_iterable, docx_path):
     document.save(docx_path)
     print(f"saved {docx_path}")
 
-def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path):
+def convert_ng_nlp_to_docx(ng_nlp_json_path, docx_path, append_filter=None):
     convert_ng_nlp_iterable_to_docx(
         [
             ni_nlp.ni for ni_nlp
-            in get_ng_nlp_from_json(ng_nlp_json_path)
+            in get_ng_nlp_from_json(ng_nlp_json_path, append_filter=append_filter)
         ], docx_path
     )
 

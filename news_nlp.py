@@ -72,7 +72,7 @@ def process_ng__json(
         t = Thread(target=process, args=[ndict], daemon=True)
         t_list.append(t)
         t.start()
-        if len(t_list) >= 8:
+        if len(t_list) > 6:
             for t in t_list:
                 t.join()
             t_list = list()
@@ -88,12 +88,17 @@ import json
 from pprint import pprint
 from news import json_dir
 
-def get_ng_nlp_from_json(json_path):
+def get_ng_nlp_from_json(json_path, append_filter=None):
+    if not append_filter:
+        append_filter = lambda x: True
     with open(json_path,'r') as fin:
         ng_nlp_list = json.load(fin)
     
     ng_nlp_obj_list = list()
     for ng_nlp_dict in ng_nlp_list:
+        ni = NewsItem(**ng_nlp_dict['ni'])
+        if not append_filter(ni):
+            continue
         ni_nlp = NewsItemNLP(
             NewsItem(**ng_nlp_dict['ni']),
             content_header_similarity=ng_nlp_dict["content_header_similarity"]
@@ -122,10 +127,10 @@ def process_nlp_applied(ni_nlp: NewsItemNLP):
     ni_nlp.ni.summary = ' '.join(summary)
     return ni_nlp
 
-def process_nlp_applied__json(nlp_json_path, nlp_applied_json_path):
+def process_nlp_applied__json(nlp_json_path, nlp_applied_json_path, append_filter=None):
     
     ng_nlp_dict_list = list()
-    for ni_nlp in get_ng_nlp_from_json(nlp_json_path):
+    for ni_nlp in get_ng_nlp_from_json(nlp_json_path, append_filter=append_filter):
         ni_nlp = process_nlp_applied(ni_nlp)
         ng_nlp_dict_list.append(asdict(ni_nlp))
     with open(nlp_applied_json_path, 'w') as fout:
