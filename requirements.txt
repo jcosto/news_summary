@@ -1,0 +1,9 @@
+nltk==3.6.3
+requests==2.26.0
+selenium==3.141.0
+numpy==1.21.2
+msedge_selenium_tools==3.141.3
+gensim==4.1.2
+beautifulsoup4==4.10.0
+dataclasses==0.8
+scikit_learn==1.0
