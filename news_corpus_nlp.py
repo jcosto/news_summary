@@ -1,4 +1,6 @@
+from dataclasses import asdict
 from pprint import pprint
+from typing import List, Tuple
 
 from gensim.corpora.dictionary import Dictionary
 from news_nlp import get_tfidf
@@ -12,8 +14,8 @@ def get_docs_lists(json_dir_=json_dir, append_filter=None):
     if not append_filter:
         append_filter = lambda x : True
     urls = set()
-    docs = list()
-    nm_list = list()
+    docs: List[str] = list()
+    nm_list: List[NewsMinimal] = list()
     for f in os.listdir(json_dir_):
         fp = os.path.join(json_dir_, f)
         if os.path.isfile(fp) and '--nlp--applied' in fp:    
@@ -36,7 +38,7 @@ def get_docs_lists(json_dir_=json_dir, append_filter=None):
                     url, n['ni']['header'], n['ni']['summary'], doc, n['ni']['date']
                 ))
 
-    docs_idx = [[i,d] for i,d in enumerate(docs)]
+    docs_idx: List[Tuple[int, str]] = [[i,d] for i,d in enumerate(docs)]
     return docs, docs_idx, nm_list
 
 import numpy as np
@@ -162,6 +164,8 @@ from news_bmw_docx import convert_ng_nlp_iterable_to_docx, docx_out
 
 def process_grouped_sorted(json_dir_=json_dir, docx_out_=docx_out, append_filter=None):
     docs, docs_idx, nm_list = get_docs_lists(json_dir_=json_dir_, append_filter=append_filter)
+    with open(os.path.join(json_dir_, 'compiled.json'), 'w', encoding='utf8') as fout:
+        json.dump([asdict(nm) for nm in nm_list],fout)
     compiled_groups = get_doc_groups(docs, docs_idx)
     convert_ng_nlp_iterable_to_docx(
         yield_nm(compiled_groups, nm_list),

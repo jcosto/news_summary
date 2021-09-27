@@ -6,7 +6,7 @@ from re import subn
 from gensim.utils import simple_preprocess
 from news_nlp_lemma import stop_words
 
-def preprocess(doc):
+def preprocess(doc: str):
     doc = subn(r'<img[^<>]+(>|$)', " image_token ", doc)[0]
     # print(doc)
     doc = subn(r'<[^<>]+(>|$)', " ", doc)[0]
@@ -30,12 +30,12 @@ glove = api.load("glove-wiki-gigaword-50")
 similarity_index = WordEmbeddingSimilarityIndex(glove)
 from pprint import pprint
 
-def get_doc_similarity_scores(query, corpus, dictionary: Dictionary=None):
+def get_doc_similarity_scores(query, corpus, dictionary: Dictionary=None, tfidf: TfidfModel=None):
     """use preprocessed query and corpus"""
     # pprint([i[:15] for i in corpus + [query]])
     if dictionary is None:
         dictionary = Dictionary(corpus + [query])
-    tfidf = TfidfModel(dictionary=dictionary)
+        tfidf = TfidfModel(dictionary=dictionary)
 
     similarity_matrix = SparseTermSimilarityMatrix(similarity_index, dictionary, tfidf)
 

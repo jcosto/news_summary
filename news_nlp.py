@@ -4,6 +4,9 @@ header separated using static value (tfidf * semantic similarity < 0.1)
 from dataclasses import asdict, dataclass, field
 import os
 from typing import List, Union
+
+from gensim.corpora.dictionary import Dictionary
+from gensim.models.tfidfmodel import TfidfModel
 from news import NewsItem
 
 @dataclass
@@ -25,10 +28,13 @@ def get_tfidf(search_terms, documents):
     return document_scores
 
 from news_nlp_gensim import preprocess, get_doc_similarity_scores
-def get_gensim_doc_similarity_scores(search_terms, documents):
+def get_gensim_doc_similarity_scores(
+    search_terms_pp: List[str], documents_pp: List[List[str]],
+    dictionary: Dictionary=None, tfidf: TfidfModel=None
+):
     return get_doc_similarity_scores(
-        preprocess(search_terms),
-        [preprocess(document) for document in documents]
+        search_terms_pp, documents_pp,
+        dictionary=dictionary, tfidf=tfidf
     )
 
 def process_ng(n: Union[dict, NewsItem]):
@@ -44,7 +50,9 @@ def process_ng(n: Union[dict, NewsItem]):
     if content:
         ds_tfidf = get_tfidf(ni_nlp.ni.header, content)
         # pprint(list(zip(ds_tfidf, ni_nlp.ni.content))[:3])
-        ds_gensim = get_gensim_doc_similarity_scores(ni_nlp.ni.header, content)
+        ds_gensim = get_gensim_doc_similarity_scores(
+            preprocess(ni_nlp.ni.header), [preprocess(c) for c in content]
+        )
         # pprint(list(zip(ds_gensim, ni_nlp.ni.content))[:3])
 
     for dst, dsg, c, idx in zip(ds_tfidf, ds_gensim, content, range(len(content))):

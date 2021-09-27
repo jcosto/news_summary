@@ -78,6 +78,12 @@ class NewsItem_Inquirer(NewsItem):
             if not this_text is None:
                 if len(this_text) == 0:
                     continue
+                if "CONTRIBUTED PHOTO" in this_text:
+                    continue
+                if "Written By:" in this_text:
+                    continue
+                if "By " in this_text and "@" in this_text:
+                    continue
                 this_text = this_text.replace("ADVERTISEMENT\n\n\n\n\n\n","").strip()
                 if len(summary) < 2:
                     print(this_text)
