@@ -84,6 +84,8 @@ class NewsItem_Inquirer(NewsItem):
                     continue
                 if "By " in this_text and "@" in this_text:
                     continue
+                if "FEATURED STORIES" in this_text:
+                    break
                 this_text = this_text.replace("ADVERTISEMENT\n\n\n\n\n\n","").strip()
                 if len(summary) < 2:
                     print(this_text)

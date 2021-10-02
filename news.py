@@ -200,13 +200,13 @@ class NewsItem():
         print(n.url)
         
         a = n.extract_news_content(html_dir_, hold_proc=False, use_selenium=use_selenium)
+        if not a is None:
+            n.cleanup_data()
         
-        n.cleanup_data()
-    
-        for i, j in zip(n.content, n.content_raw):
-            print("-- " + i)
-            print("++ " + j)
-        # input("enter to continue...")
+            for i, j in zip(n.content, n.content_raw):
+                print("-- " + i)
+                print("++ " + j)
+            # input("enter to continue...")
 
 def has_class_name(s, c_ref_list):
     try:

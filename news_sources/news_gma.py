@@ -97,12 +97,14 @@ class NewsItem_GMA(NewsItem):
             use_selenium=use_selenium
         )
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
-        
-        self.extract_header(soup)
-        
-        self.extract_full_date(soup)
+        try:
+            self.extract_header(soup)
+            
+            self.extract_full_date(soup)
 
-        self.extract_summary_content(soup)
+            self.extract_summary_content(soup)
+        except:
+            return None
 
         return self
         
