@@ -10,10 +10,7 @@ process:
     convert news data to docx as close as possible to target format
 
 postprocess:
-    setup macro to finalize formatting
-    apply macro to document
     filter and sort news blocks as required
-    combine news blocks between different sources
     copy to final report
 """
 import datetime
@@ -30,23 +27,58 @@ NOW_DT = isoformat_date_to_datetime_obj(NOW)
 NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
 NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
 
-# NOW_BEFORE = NOW
-# NOW_BEFORE_DT = NOW_DT
+# ROOT = r"D:\Shared\test\bmw"
+import os
+import tempfile
+ROOT = os.path.join(tempfile.gettempdir(), "bmw_gen")
+
+import argparse
+def cli():
+    ap = argparse.ArgumentParser(
+        description="""BMW generator
+\t1. scrape news websites (GMA, CNBC, Reuters, CNN, Inquirer, BWorld)
+\t2. generate summary from found content, pruning first sentence if close to news title measured by TF-IDF and Soft Cosine Similarity
+\t3. classify between PHL and ROW with Multinomial Bayes model trained on 2018-2021 BMW documents
+\t4. output formatted docx files""",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    ap.add_argument('--start_date', '-sd', type=str, help="YYYY-MM-DD start of news articles for output")
+    ap.add_argument('--end_date', '-ed', type=str, help="YYYY-MM-DD end of news articles for output")
+    ap.add_argument('--out_dir', '-o', type=str, help="output directory for output ")
+    args = ap.parse_args()
+
+    return (
+        args.start_date,
+        args.end_date,
+        args.out_dir,
+    )
 
 if __name__ == "__main__":
-    print(f"{NOW} {NOW_DT.strftime('%A')}, {NOW_BEFORE} {NOW_BEFORE_DT.strftime('%A')}")
+    sd, ed, out = cli()
+    if not out is None:
+        ROOT = out
+    if not ed is None:
+        NOW = ed
+        NOW_DT = isoformat_date_to_datetime_obj(NOW)
+    if not sd is None:
+        NOW_BEFORE = sd
+        NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
+    else:
+        NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
+        NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
+    
+
+    print(f"{NOW_BEFORE} {NOW_BEFORE_DT.strftime('%A')} to {NOW} {NOW_DT.strftime('%A')}")
+    print(f"saving output files to {ROOT}")
     input("enter to continue")
 
-    print("setting up libraries")
-import os
+    if not os.path.exists(ROOT):
+        os.makedirs(ROOT)
+
+print("setting up libraries")
+
 from typing import List, Union
 from news import NewsItem, NewsMinimal, ensure_dirs_exist, html_dir, json_dir, NewsGroup
-from news_sources.news_cnbc import NewsItem_CNBC
-from news_sources.news_reuters import NewsItem_Reuters
-from news_sources.news_cnn import NewsItem_CNN
-from news_sources.news_inquirer import NewsItem_Inquirer
-from news_sources.news_gma import NewsItem_GMA
-from news_sources.news_bworld import NewsItem_BWorld
 
 from news_nlp import process_ng__json, process_nlp_applied__json
 from news_bmw_docx import convert_ng_nlp_to_docx, docx_out
@@ -79,7 +111,6 @@ def process_news_to_docx(
         ni_cls, front_url,
         html_dir_=html_dir_, json_dir_=json_dir_,
         use_selenium_ng=use_selenium_ng, use_selenium_ni=use_selenium_ni
-        
     )
     
     fa, fb = os.path.splitext(os.path.basename(html_path))
@@ -166,16 +197,19 @@ def append_filter_date__phl(ni: Union[dict, NewsItem, NewsMinimal]):
 def append_filter_date__row(ni: Union[dict, NewsItem, NewsMinimal]):
     return append_filter_date(ni) and predict_row(get_doc(ni))
 
+from news_sources.news_cnbc import NewsItem_CNBC
+from news_sources.news_reuters import NewsItem_Reuters
+from news_sources.news_cnn import NewsItem_CNN
+from news_sources.news_inquirer import NewsItem_Inquirer
+from news_sources.news_gma import NewsItem_GMA
+from news_sources.news_bworld import NewsItem_BWorld
+
 if __name__ == "__main__":
     start = datetime.datetime.now()
-
-    root = r"D:\Shared\test\bmw"
     
-    # input("enter")
-    # NOW = '2021-09-06'
-    hd = os.path.join(root, NOW, "html")
-    jd = os.path.join(root, NOW, "json")
-    dd = os.path.join(root, NOW, "docx")
+    hd = os.path.join(ROOT, NOW, "html")
+    jd = os.path.join(ROOT, NOW, "json")
+    dd = os.path.join(ROOT, NOW, "docx")
     dirs = [hd, jd, dd]
     ensure_dirs_exist(dirs)
     

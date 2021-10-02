@@ -1,0 +1,1 @@
+env\scripts\activate & python pipeline.py --out_dir "D:\Shared\test\bmw"
