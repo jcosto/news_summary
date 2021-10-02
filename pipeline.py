@@ -19,6 +19,7 @@ postprocess:
 import datetime
 def isoformat_date_to_datetime_obj(dt_str):
     return datetime.datetime.strptime(dt_str,"%Y-%m-%d")
+
 def get_before_date(dt: datetime):
     days_before = 2 if dt.strftime('%A') == "Sunday" else 1
     return (NOW_DT - datetime.timedelta(days=days_before))
@@ -28,6 +29,9 @@ NOW = NOW_DT.isoformat()[:10]
 NOW_DT = isoformat_date_to_datetime_obj(NOW)
 NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
 NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
+
+# NOW_BEFORE = NOW
+# NOW_BEFORE_DT = NOW_DT
 
 if __name__ == "__main__":
     print(f"{NOW} {NOW_DT.strftime('%A')}, {NOW_BEFORE} {NOW_BEFORE_DT.strftime('%A')}")
@@ -51,14 +55,17 @@ def append_filter_date(ni: Union[dict, NewsItem, NewsMinimal]):
     global NOW_DT
     global NOW_BEFORE_DT
     ni_date = None
-    if isinstance(ni, dict):
-        ni_date = isoformat_date_to_datetime_obj(ni['date'][:10])
-    elif isinstance(ni, NewsItem):
-        ni_date = isoformat_date_to_datetime_obj(ni.date[:10])
-    elif isinstance(ni, NewsMinimal):
-        ni_date = isoformat_date_to_datetime_obj(ni.date[:10])
-    if ni_date is None:
-        raise RuntimeError(f"unhandled object {str(ni.__class__)}")
+    try:
+        if isinstance(ni, dict):
+            ni_date = isoformat_date_to_datetime_obj(ni['date'][:10])
+        elif isinstance(ni, NewsItem):
+            ni_date = isoformat_date_to_datetime_obj(ni.date[:10])
+        elif isinstance(ni, NewsMinimal):
+            ni_date = isoformat_date_to_datetime_obj(ni.date[:10])
+        if ni_date is None:
+            raise RuntimeError(f"unhandled object {str(ni.__class__)}")
+    except ValueError:
+        return False
     return NOW_BEFORE_DT <= ni_date and ni_date <= NOW_DT
 
 def process_news_to_docx(
@@ -131,7 +138,33 @@ def handle_parallel_tasks_join():
     global TASK_LIST
     for t in TASK_LIST:
         t.join()
-    
+
+import pickle
+from sklearn.naive_bayes import MultinomialNB
+with open('mnb_bmw.pkl','rb') as fin:
+    mnb_bmw: MultinomialNB = pickle.load(fin)
+def predict_phl(s):
+    return mnb_bmw.predict([s])[0] == 0
+def predict_row(s):
+    return mnb_bmw.predict([s])[0] == 1
+
+def get_doc(ni: Union[dict, NewsItem, NewsMinimal]):
+    ni_doc = None
+    if isinstance(ni, dict):
+        ni_doc = ni['header'] + ' ' + ni['summary']
+    elif isinstance(ni, NewsItem):
+        ni_doc = ni.header + ' ' + ni.summary
+    elif isinstance(ni, NewsMinimal):
+        ni_doc = ni.header + ' ' + ni.summary
+    if ni_doc is None:
+        raise RuntimeError(f"unhandled object {str(ni.__class__)}")
+    return ni_doc
+
+def append_filter_date__phl(ni: Union[dict, NewsItem, NewsMinimal]):
+    return append_filter_date(ni) and predict_phl(get_doc(ni))
+
+def append_filter_date__row(ni: Union[dict, NewsItem, NewsMinimal]):
+    return append_filter_date(ni) and predict_row(get_doc(ni))
 
 if __name__ == "__main__":
     start = datetime.datetime.now()
@@ -139,14 +172,12 @@ if __name__ == "__main__":
     root = r"D:\Shared\test\bmw"
     
     # input("enter")
-    
+    # NOW = '2021-09-06'
     hd = os.path.join(root, NOW, "html")
     jd = os.path.join(root, NOW, "json")
     dd = os.path.join(root, NOW, "docx")
     dirs = [hd, jd, dd]
     ensure_dirs_exist(dirs)
-
-
     
     for ni_cls, use_selenium_ng, use_selenium_ni in [
         [NewsItem_GMA, True, False],
@@ -170,10 +201,18 @@ if __name__ == "__main__":
         ):
             handle_parallel_tasks_start(p)
     handle_parallel_tasks_join()
-
+    
     process_grouped_sorted(
         json_dir_=jd, docx_out_=dd,
         append_filter = append_filter_date
+    )
+    process_grouped_sorted(
+        json_dir_=jd, docx_out_=dd, docx_fp="compiled_phl.docx",
+        append_filter = append_filter_date__phl
+    )
+    process_grouped_sorted(
+        json_dir_=jd, docx_out_=dd, docx_fp="compiled_row.docx",
+        append_filter = append_filter_date__row
     )
 
     end = datetime.datetime.now()
