@@ -118,7 +118,9 @@ class NewsItem_Reuters(NewsItem):
             use_selenium=use_selenium
         )
         soup = bs4.BeautifulSoup(page_source, features='html.parser')
-        
+        if "Page Not Found" in soup.text:
+            return None
+
         self.extract_header(soup)
 
         self.extract_full_date(soup)
