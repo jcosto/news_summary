@@ -1,7 +1,11 @@
 """
 news page handlers:
-news_cnbc
-news_reuters
+    news_cnbc
+    news_reuters
+    news_cnn
+    news_inquirer
+    news_gma
+    news_bworld
 
 process:
     derive data from news front page url as html and json files
@@ -53,29 +57,39 @@ def cli():
         args.out_dir,
     )
 
-if __name__ == "__main__":
-    sd, ed, out = cli()
+def set_configuration(out, ed, sd):
+    global ROOT
+    global NOW
+    global NOW_DT
+    global NOW_BEFORE
+    global NOW_BEFORE_DT
+    
     if not out is None:
         ROOT = out
+
     if not ed is None:
         NOW = ed
         NOW_DT = isoformat_date_to_datetime_obj(NOW)
+
     if not sd is None:
         NOW_BEFORE = sd
         NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
     else:
         NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
         NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
-    
 
     print(f"{NOW_BEFORE} {NOW_BEFORE_DT.strftime('%A')} to {NOW} {NOW_DT.strftime('%A')}")
     print(f"saving output files to {ROOT}")
-    input("enter to continue")
-
     if not os.path.exists(ROOT):
         os.makedirs(ROOT)
 
-print("setting up libraries")
+if __name__ == "__main__":
+    sd, ed, out = cli()
+    set_configuration(out, ed, sd)
+
+    input("enter to continue")
+
+    print("setting up libraries")
 
 from typing import List, Union
 from news import NewsItem, NewsMinimal, ensure_dirs_exist, html_dir, json_dir, NewsGroup
@@ -204,7 +218,9 @@ from news_sources.news_inquirer import NewsItem_Inquirer
 from news_sources.news_gma import NewsItem_GMA
 from news_sources.news_bworld import NewsItem_BWorld
 
-if __name__ == "__main__":
+def run(start_date=None, end_date=None, out_dir=None):
+    set_configuration(out_dir, end_date, start_date)
+
     start = datetime.datetime.now()
     
     hd = os.path.join(ROOT, NOW, "html")
@@ -253,3 +269,6 @@ if __name__ == "__main__":
 
     duration = (end-start).total_seconds()
     print(f"{duration}s ~{int(duration/60)}m ~{int(duration/60/60)}h")
+
+if __name__ == "__main__":
+    run()
