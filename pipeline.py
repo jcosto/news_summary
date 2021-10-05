@@ -74,9 +74,9 @@ def set_configuration(out, ed, sd):
     if not sd is None:
         NOW_BEFORE = sd
         NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
-    else:
-        NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
-        NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
+    # else:
+    #     NOW_BEFORE = get_before_date(NOW_DT).isoformat()[:10]
+    #     NOW_BEFORE_DT = isoformat_date_to_datetime_obj(NOW_BEFORE)
 
     print(f"{NOW_BEFORE} {NOW_BEFORE_DT.strftime('%A')} to {NOW} {NOW_DT.strftime('%A')}")
     print(f"saving output files to {ROOT}")
