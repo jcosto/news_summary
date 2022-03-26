@@ -99,11 +99,14 @@ class NewsItem_CNN(NewsItem):
         if "We're sorry, the page you were looking for cannot be found." in soup.text:
             return None
                 
-        self.extract_header(soup)
+        try:
+            self.extract_header(soup)
 
-        self.extract_full_date(soup)
+            self.extract_full_date(soup)
 
-        self.extract_summary_content(soup)
+            self.extract_summary_content(soup)
+        except:
+            return None
 
         return self
         

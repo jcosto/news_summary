@@ -162,14 +162,14 @@ def yield_nm(compiled_groups_, nm_list_):
 
 from news_bmw_docx import convert_ng_nlp_iterable_to_docx, docx_out
 
-def process_grouped_sorted(json_dir_=json_dir, docx_out_=docx_out, append_filter=None):
+def process_grouped_sorted(json_dir_=json_dir, docx_out_=docx_out, append_filter=None, docx_fp='compiled.docx'):
     docs, docs_idx, nm_list = get_docs_lists(json_dir_=json_dir_, append_filter=append_filter)
     with open(os.path.join(json_dir_, 'compiled.json'), 'w', encoding='utf8') as fout:
         json.dump([asdict(nm) for nm in nm_list],fout)
     compiled_groups = get_doc_groups(docs, docs_idx)
     convert_ng_nlp_iterable_to_docx(
         yield_nm(compiled_groups, nm_list),
-        os.path.join(docx_out_, "compiled.docx")
+        os.path.join(docx_out_, docx_fp)
     )
 
 if __name__ == "__main__":
